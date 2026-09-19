@@ -9,7 +9,6 @@ main(int argc, char *argv[])
     exit(-1);
   } else if (child_pid == 0) {
     if (pause(100) == -1) {
-      printf("Child process was killed.\n");
       exit(-1);
     }
     exit(1);
