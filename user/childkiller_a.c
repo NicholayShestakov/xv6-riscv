@@ -6,6 +6,7 @@ main(int argc, char *argv[])
 {
   int child_pid = fork();
   if (child_pid == -1) {
+    printf("Child processes was not created.\n");
     exit(-1);
   } else if (child_pid == 0) {
     if (pause(100) == -1) {
