@@ -699,3 +699,15 @@ procdump(void)
     printk("\n");
   }
 }
+
+struct proc *
+get_proc_list()
+{
+  return proc;
+}
+
+struct spinlock *
+get_wait_lock()
+{
+  return &wait_lock;
+}
