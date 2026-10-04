@@ -15,12 +15,14 @@ main(int argc, char *argv[])
   }
 
   if (count < 0) {
+    free(plist);
     exit(-1);
   }
 
   for (int i = 0; i < count; ++i) {
     struct procinfo *pi = &plist[i];
-    printf("%d %s %d %d\n", pi->pid, pi->name, pi->state, pi->ppid);
+    printf("%-*d %s %d %d\n", pi->pid, pi->name, pi->state, pi->ppid);
   }
+  free(plist);
   exit(0);
 }
