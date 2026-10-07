@@ -2,6 +2,14 @@
 
 struct stat;
 
+enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+struct procinfo {
+  int pid;
+  char name[16];
+  enum procstate state;
+  int ppid;
+};
+
 // system calls
 int fork(void);
 int exit(int) __attribute__((noreturn));
@@ -25,6 +33,7 @@ char *sys_sbrk(int, int);
 int pause(int);
 int uptime(void);
 int sync(void);
+int ps_listinfo(struct procinfo *, int);
 
 // ulib.c
 int stat(const char *, struct stat *);

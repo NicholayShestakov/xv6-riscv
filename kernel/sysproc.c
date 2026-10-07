@@ -110,3 +110,62 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_ps_listinfo(void)
+{
+  uint64 plist;
+  argaddr(0, &plist);
+  if (plist == 0) {
+    return -1;
+  }
+  int lim;
+  argint(1, &lim);
+  if (lim < 0) {
+    return -1;
+  }
+
+  struct proc *proc = get_proc_list();
+  int counter = 0;
+  struct spinlock *wait_lock = get_wait_lock();
+
+  for (int i = 0; i < NPROC; ++i) {
+    struct proc *p = &proc[i];
+    acquire(wait_lock);
+    if (p->parent != 0) {
+      acquire(&(p->parent->lock));
+    }
+    acquire(&(p->lock));
+    if (p->state != USED && p->state != UNUSED) {
+      if (counter < lim) {
+        struct procinfo pinfo;
+        pinfo.pid = p->pid;
+        safestrcpy(pinfo.name, p->name, sizeof(p->name));
+        pinfo.state = p->state;
+        if (p->parent == 0) {
+          pinfo.ppid = 0;
+        } else {
+          pinfo.ppid = p->parent->pid;
+        }
+        if (copyout(myproc()->pagetable, myproc()->sz,
+                    plist + (counter * sizeof(struct procinfo)),
+                    (char *)(&pinfo), sizeof(struct procinfo))) {
+          release(&(p->lock));
+          if (p->parent != 0) {
+            release(&(p->parent->lock));
+          }
+          release(wait_lock);
+          return -1;
+        }
+      }
+      ++counter;
+    }
+    release(&(p->lock));
+    if (p->parent != 0) {
+      release(&(p->parent->lock));
+    }
+    release(wait_lock);
+  }
+
+  return counter;
+}
