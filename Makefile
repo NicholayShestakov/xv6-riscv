@@ -152,6 +152,7 @@ UPROGS=\
 	$U/_dorphan\
 	$U/_sync\
 	$U/_task3\
+	$U/_mutextest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
