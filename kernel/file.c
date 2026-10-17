@@ -61,17 +61,17 @@ fileclose(struct file *f)
 {
   struct file ff;
 
+  if (f->type == FD_MUTEX) {
+    if (f->mutex->pid == myproc()->pid && f->mutex->locked == 1) {
+      releasesleep(f->mutex);
+    }
+  }
+
   acquire(&ftable.lock);
   if (f->ref < 1)
     panic("fileclose");
   if (--(f->ref) > 0) {
-    if (f->type == FD_MUTEX) {
-      acquire(&(f->mutex->lk));
-      if (f->mutex->pid == myproc()->pid && f->mutex->locked == 1) {
-        releasesleep(f->mutex);
-      }
-      release(&(f->mutex->lk));
-    }
+
     release(&ftable.lock);
     return;
   }

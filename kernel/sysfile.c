@@ -591,11 +591,10 @@ sys_mutex_unlock(void)
   }
   printk("sys_mutex_unlock: file is a mutex\n");
 
-  printk("sys_mutex_unlock: aquiring spinlock in mutex\n");
-  acquire(&(f->mutex->lk));
   printk("sys_mutex_unlock: aquired\n");
   if (f->mutex->pid == myproc()->pid && f->mutex->locked == 1) {
     printk("sys_mutex_unlock: releasing mutex\n");
+
     releasesleep(f->mutex);
     printk("sys_mutex_unlock: mutex released\n");
   } else {
@@ -607,8 +606,7 @@ sys_mutex_unlock(void)
     }
     return -1;
   }
-  printk("sys_mutex_unlock: releasing spinlock in mutex\n");
-  release(&(f->mutex->lk));
+
   printk("sys_mutex_unlock: released\n");
   return 0;
 }
