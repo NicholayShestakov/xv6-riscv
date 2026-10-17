@@ -79,6 +79,7 @@ mycpu(void)
 }
 
 // Return the current struct proc *, or zero if none.
+// структура текущего процесса
 struct proc *
 myproc(void)
 {

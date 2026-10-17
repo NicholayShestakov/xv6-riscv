@@ -528,3 +528,45 @@ sys_pipe(void)
   }
   return 0;
 }
+
+// создание mutex
+uint64
+sys_mutex(void)
+{
+  uint64 fdarray; // user pointer to array of two integers
+  struct file *f;
+  int fd;
+  // текущий процесс, структура
+  struct proc *p = myproc();
+
+  // принятие адреса из пользовательского пространства
+  argaddr(0, &fdarray);
+  if (mutexalloc(&f) < 0)
+    return -1;
+  fd = -1;
+  // выделение свободного номера файлового дескрибтора
+  if ((fd = fdalloc(f)) < 0) {
+    if (fd >= 0)
+      // привязка
+      p->ofile[fd] = 0;
+    fileclose(f);
+    return -1;
+  }
+  // копирование в пользовательское пространство
+  if (copyout(p->pagetable, p->sz, fdarray, (char *)&fd, sizeof(fd)) < 0) {
+    p->ofile[fd] = 0;
+    fileclose(f);
+    return -1;
+  }
+  return 0;
+}
+
+uint64
+sys_mutex_lock(void)
+{
+}
+
+uint64
+sys_mutex_unlock(void)
+{
+}
