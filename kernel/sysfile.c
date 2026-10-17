@@ -528,3 +528,85 @@ sys_pipe(void)
   }
   return 0;
 }
+
+// создание mutex
+uint64
+sys_mutex(void)
+{
+  printk("sys_mutex: sys_mutex_begin\n");
+  struct file *f;
+  int fd;
+  struct proc *p = myproc();
+  if (mutexalloc(&f) < 0) {
+    printk("sys_mutex: mutex alloc error\n");
+    return -1;
+  }
+  printk("sys_mutex: mutex allocated\n");
+  if ((fd = fdalloc(f)) < 0) {
+    fileclose(f);
+    printk("sys_mutex: fd alloc error, fileclosed\n");
+    return -1;
+  }
+  printk("sys_mutex: fd allocated\n");
+  p->ofile[fd] = f;
+  printk("sys_mutex: proccess connected with file\n");
+  return fd;
+}
+
+uint64
+sys_mutex_lock(void)
+{
+  struct file *f;
+  printk("sys_mutex_lock: sys_mutex_lock_begin\n");
+  if (argfd(0, 0, &f) < 0) {
+    printk("sys_mutex_lock: file error\n");
+    return -1;
+  }
+  printk("sys_mutex_lock: got the file\n");
+
+  if (f->type != FD_MUTEX) {
+    printk("sys_mutex_lock: file is not a mutex\n");
+    return -1;
+  }
+  printk("sys_mutex_lock: file is mutex\n");
+
+  printk("sys_mutex_lock: \n");
+  acquiresleep(f->mutex);
+  printk("sys_mutex_lock: mutex aquired\n");
+  return 0;
+}
+
+uint64
+sys_mutex_unlock(void)
+{
+  struct file *f;
+  if (argfd(0, 0, &f) < 0) {
+    printk("sys_mutex_unlock: file error\n");
+    return -1;
+  }
+  printk("sys_mutex_unlock: got the file\n");
+  if (f->type != FD_MUTEX) {
+    printk("sys_mutex_unlock: file is not a mutex\n");
+    return -1;
+  }
+  printk("sys_mutex_unlock: file is a mutex\n");
+
+  printk("sys_mutex_unlock: aquired\n");
+  if (f->mutex->pid == myproc()->pid && f->mutex->locked == 1) {
+    printk("sys_mutex_unlock: releasing mutex\n");
+
+    releasesleep(f->mutex);
+    printk("sys_mutex_unlock: mutex released\n");
+  } else {
+    if (f->mutex->pid == myproc()->pid) {
+      printk("sys_mutex_unlock: error with mutex lock\n");
+    } else {
+      printk(
+        "sys_mutex_unlock: error: current proccess is not a procces that locked mutex\n");
+    }
+    return -1;
+  }
+
+  printk("sys_mutex_unlock: released\n");
+  return 0;
+}
