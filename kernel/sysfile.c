@@ -570,7 +570,7 @@ sys_mutex_lock(void)
   }
   printk("sys_mutex_lock: file is mutex\n");
 
-  printk("sys_mutex_lock: starting aquire\n");
+  printk("sys_mutex_lock: \n");
   acquiresleep(f->mutex);
   printk("sys_mutex_lock: mutex aquired\n");
   return 0;
