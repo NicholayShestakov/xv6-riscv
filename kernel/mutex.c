@@ -2,9 +2,10 @@
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
-#include "proc.h"
 #include "fs.h"
+#include "spinlock.h"
 #include "sleeplock.h"
+
 #include "file.h"
 
 int
@@ -36,7 +37,7 @@ mutexalloc(struct file **f)
 }
 
 void
-mutexclose(struct sleeplock **m)
+mutexclose(struct sleeplock *m)
 {
   printk("mutexclose: freeing mutex\n");
   kfree(m);
