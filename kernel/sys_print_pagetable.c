@@ -16,10 +16,10 @@ print_pt(pagetable_t current_pagetable, int dots)
       continue;
     }
 
-    char flags[] = {(pte & PTE_R) ? 'R' : '_', (pte & PTE_W) ? 'W' : '_',
-                    (pte & PTE_X) ? 'X' : '_', (pte & PTE_U) ? 'U' : '_',
-                    (pte & PTE_G) ? 'U' : 'G', (pte & PTE_A) ? 'A' : '_',
-                    (pte & PTE_D) ? 'D' : '_', '\0'};
+    char flags[] = {(pte & PTE_R) ? 'R' : ' _ ', (pte & PTE_W) ? 'W' : ' _ ',
+                    (pte & PTE_X) ? 'X' : ' _ ', (pte & PTE_U) ? 'U' : ' _ ',
+                    (pte & PTE_G) ? 'U' : 'G',   (pte & PTE_A) ? 'A' : ' _ ',
+                    (pte & PTE_D) ? 'D' : ' _ ', '\0'};
 
     if (dots == 1) {
       printk("..........");
