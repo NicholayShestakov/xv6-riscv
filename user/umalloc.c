@@ -18,33 +18,46 @@ union header {
 
 typedef union header Header;
 
+#define FREEP_ARR_SIZE 10 // 8 - 4096+
+static Header *freep_array[FREEP_ARR_SIZE] = {0};
+
 static Header base;
-static Header *freep;
 
 void
 free(void *ap)
 {
-  Header *bp, *p;
+  Header *bp, *p, *prevp;
 
   bp = (Header *)ap - 1;
-  for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+  int array_index = 0;
+  for (int i = 8; i < bp->s.size && array_index < FREEP_ARR_SIZE; i *= 2) {
+    ++array_index;
+  }
+
+  for (p = freep_array[array_index]; !(bp > p && bp < p->s.ptr);
+       prevp = p, p = p->s.ptr)
     if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
       break;
+
   if (bp + bp->s.size == p->s.ptr) {
-    bp->s.size += p->s.ptr->s.size;
-    bp->s.ptr = p->s.ptr->s.ptr;
-  } else
-    bp->s.ptr = p->s.ptr;
-  if (p + p->s.size == bp) {
-    p->s.size += bp->s.size;
-    p->s.ptr = bp->s.ptr;
-  } else
-    p->s.ptr = bp;
-  freep = p;
+    while (bp + bp->s.size == p->s.ptr) {
+      prevp->s.ptr = p->s.ptr;
+      bp->s.size += p->s.ptr->s.size;
+      bp->s.ptr = p->s.ptr->s.ptr;
+
+      for (p = freep_array[array_index++];
+           !(bp > p && bp < p->s.ptr) && array_index < FREEP_ARR_SIZE - 1;
+           prevp = p, p = p->s.ptr)
+        if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+          break;
+    }
+  }
+  bp->s.ptr = p->s.ptr;
+  freep_array[array_index] = p;
 }
 
 static Header *
-morecore(uint nu)
+morecore(uint nu, int idx)
 {
   char *p;
   Header *hp;
@@ -57,7 +70,7 @@ morecore(uint nu)
   hp = (Header *)p;
   hp->s.size = nu;
   free((void *)(hp + 1));
-  return freep;
+  return freep_array[idx];
 }
 
 void *
@@ -67,8 +80,13 @@ malloc(uint nbytes)
   uint nunits;
 
   nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
-  if ((prevp = freep) == 0) {
-    base.s.ptr = freep = prevp = &base;
+  int array_index = 0;
+  for (int i = 8; i < nunits && array_index < FREEP_ARR_SIZE; i *= 2) {
+    ++array_index;
+  }
+
+  if ((prevp = freep_array[array_index]) == 0) {
+    base.s.ptr = freep_array[array_index] = prevp = &base;
     base.s.size = 0;
   }
   for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
@@ -77,14 +95,23 @@ malloc(uint nbytes)
         prevp->s.ptr = p->s.ptr;
       else {
         p->s.size -= nunits;
+        if (array_index > 0 && p->s.size <= (8 << (array_index - 1))) {
+          prevp->s.ptr = p->s.ptr;
+          for (Header *p_down = freep_array[array_index - 1];
+               !(p > p_down && p < p_down->s.ptr); p_down = p_down->s.ptr)
+            if (p_down >= p_down->s.ptr && (p > p_down || p < p_down->s.ptr))
+              break;
+        }
         p += p->s.size;
         p->s.size = nunits;
       }
-      freep = prevp;
+      freep_array[array_index] = prevp;
       return (void *)(p + 1);
     }
-    if (p == freep)
-      if ((p = morecore(nunits)) == 0)
+    if (p == freep_array[array_index])
+      if (array_index < FREEP_ARR_SIZE - 1) {
+        p = freep_array[array_index++];
+      } else if ((p = morecore(nunits, array_index)) == 0)
         return 0;
   }
 }
