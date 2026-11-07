@@ -120,6 +120,21 @@ delete_new_list(List *list)
 }
 
 void
+print_list(List *list)
+{
+  if (list == 0) {
+    printf("Передан нулевой указатель на список\n");
+    return;
+  }
+  ListNode *current = list->first_element;
+  while (current != 0) {
+    printf("%d ", current->value);
+    current = current->next;
+  }
+  printf("\n");
+}
+
+void
 main()
 {
   List *new_list_1 = create_new_list();
@@ -133,11 +148,9 @@ main()
   add_new_element(new_list_1, 8);
   add_new_element(new_list_1, 9);
   add_new_element(new_list_1, 10);
-
   delete_element_on_index(new_list_1, 4);
   delete_element_on_index(new_list_1, 1);
   delete_element_on_index(new_list_1, 7);
-
   delete_new_list(new_list_1);
   new_list_1 = 0;
 }
