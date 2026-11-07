@@ -15,11 +15,27 @@ typedef struct List {
 List *
 create_new_list()
 {
+  printf("Создание списка. Вывод таблицы страниц до:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
   List *new_list = malloc(sizeof(List));
   if (new_list == 0) {
     printf("Не выделилась память на новый список\n");
     return 0;
   }
+
+  printf("\n");
+  printf("\n");
+  printf("Создание списка. Вывод таблицы страниц после:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
+
   new_list->first_element = 0;
   new_list->size = 0;
   new_list->last_element = 0;
@@ -34,11 +50,27 @@ add_new_element(List *list, int value)
     return;
   }
 
+  printf("Создание одного элемента списка. Вывод таблицы страниц до:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
   ListNode *new_node = malloc(sizeof(ListNode));
   if (new_node == 0) {
     printf("Не выделилась память на новый элемент списка\n");
     return;
   }
+
+  printf("\n");
+  printf("\n");
+  printf("Создание эелемента списка. Вывод таблицы страниц после:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
+
   new_node->value = value;
   new_node->next = 0;
 
@@ -96,7 +128,26 @@ delete_element_on_index(List *list, int index)
     }
   }
 
+  printf("\n");
+  printf("\n");
+  printf("Удаление элемента списка. Вывод таблицы страниц после:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
+
   free(node_to_delete);
+
+  printf("\n");
+  printf("\n");
+  printf("Удаление эелемента списка. Вывод таблицы страниц после:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
+
   list->size -= 1;
 }
 
@@ -116,7 +167,25 @@ delete_new_list(List *list)
   while (list->size > 0)
     delete_element_on_index(list, 0);
 
+  printf("\n");
+  printf("\n");
+  printf("Удаление списка. Вывод таблицы страниц после:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
+
   free(list);
+
+  printf("\n");
+  printf("\n");
+  printf("Удаление списка. Вывод таблицы страниц после:\n");
+  printf("\n");
+  printf("\n");
+  print_pagetable();
+  printf("\n");
+  printf("\n");
 }
 
 void
@@ -142,15 +211,7 @@ main()
   add_new_element(new_list_1, 2);
   add_new_element(new_list_1, 3);
   add_new_element(new_list_1, 4);
-  add_new_element(new_list_1, 5);
-  add_new_element(new_list_1, 6);
-  add_new_element(new_list_1, 7);
-  add_new_element(new_list_1, 8);
-  add_new_element(new_list_1, 9);
-  add_new_element(new_list_1, 10);
-  delete_element_on_index(new_list_1, 4);
-  delete_element_on_index(new_list_1, 1);
-  delete_element_on_index(new_list_1, 7);
+  delete_element_on_index(new_list_1, 2);
   delete_new_list(new_list_1);
   new_list_1 = 0;
 }
