@@ -21,71 +21,122 @@ typedef union header Header;
 #define FREEP_ARR_SIZE 10 // 8 - 4096+
 static Header *freep_array[FREEP_ARR_SIZE] = {0};
 
-static Header base;
+static Header base[FREEP_ARR_SIZE];
+
+Header *
+pop(Header *prev, Header *p)
+{
+  prev->s.ptr = p->s.ptr;
+  return p;
+}
+
+void
+push(Header *prev, Header *p)
+{
+  p->s.ptr = prev->s.ptr;
+  prev->s.ptr = p;
+}
+
+int
+merge(Header *p)
+{
+  if (p + p->s.size == p->s.ptr) {
+    p->s.size += p->s.ptr->s.size;
+    p->s.ptr = p->s.ptr->s.ptr;
+    return 0;
+  }
+  return 1;
+}
+
+static int is_heap_start_filled = 0;
+static char *heap_start;
+
+void
+debug_info()
+{
+  char *edge = sbrk(0);
+  printf("  Heap start: %p\n", heap_start);
+  printf("  Data segment edge - %p\n", edge);
+  printf("  Blocks:\n");
+  int occuped_size = 0;
+  int current_free_size = 0;
+  int current_free_ring = 0;
+  int current_occuped_size = 0;
+  int flag = 0;
+  for (char *i = heap_start; i < edge;) {
+    for (int idx = 0; idx < FREEP_ARR_SIZE; ++idx) {
+      for (Header *p = freep_array[idx];; p = p->s.ptr) {
+        if (p == 0)
+          break;
+        if ((char *)p == i && p->s.size != 0) {
+          flag = 1;
+          current_free_size = p->s.size;
+          current_free_ring = idx;
+          break;
+        }
+        if (p->s.ptr == freep_array[idx])
+          break;
+      }
+      if (flag)
+        break;
+    }
+    if (flag) {
+      if (current_occuped_size > 0) {
+        printf("    %p - size %ld, occuped\n", i - current_occuped_size,
+               current_occuped_size * sizeof(Header));
+        occuped_size += current_occuped_size;
+        current_occuped_size = 0;
+      }
+      printf("    %p - size %ld, free, ring %d\n", i,
+             current_free_size * sizeof(Header), current_free_ring);
+      i += current_free_size * sizeof(Header);
+      flag = 0;
+    } else {
+      ++current_occuped_size;
+      i += sizeof(Header);
+
+      if (i == edge) {
+        printf("    %p - size %ld, occuped\n", i - current_occuped_size,
+               current_occuped_size * sizeof(Header));
+        occuped_size += current_occuped_size;
+      }
+    }
+  }
+  printf("  Total allocated memory: %ld\n", (long)(edge - heap_start));
+  printf("  Total occuped memory: %ld\n",
+         (long)(occuped_size * sizeof(Header)));
+  printf("  Total free memory: %ld\n",
+         (long)(edge - heap_start - occuped_size * sizeof(Header)));
+}
 
 void
 free(void *ap)
 {
-  // printf("free: free called with pointer %p\n", ap);
   Header *bp, *p;
 
   bp = (Header *)ap - 1;
-  // printf("free: size of element is %d\n", bp->s.size);
   int array_index = 0;
-  for (int i = 8; i < bp->s.size && array_index < FREEP_ARR_SIZE; i *= 2) {
+  for (int i = 8; i < bp->s.size && array_index < FREEP_ARR_SIZE - 1; i *= 2)
     ++array_index;
-  }
-  // printf("free: array index is %d\n", array_index);
 
   while (array_index < FREEP_ARR_SIZE) {
+    if (freep_array[array_index] == 0) {
+      base[array_index].s.ptr = freep_array[array_index] = &base[array_index];
+      base[array_index].s.size = 0;
+    }
     for (p = freep_array[array_index]; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
       if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
         break;
-    // printf("free: previous pointer is %p\n", p);
-    if (bp + bp->s.size == p->s.ptr && array_index < FREEP_ARR_SIZE - 1) {
-      // printf("free: merging with %p\n", p);
-      bp->s.size += p->s.ptr->s.size;
-      p->s.ptr = p->s.ptr->s.ptr;
-      ++array_index;
-      // printf("free: next ring with array index %d\n", array_index);
-    } else {
-      // printf("free: successfully freed %p memory\n", ap);
-      bp->s.ptr = p->s.ptr;
-      p->s.ptr = bp;
-      freep_array[array_index] = p;
+    push(p, bp);
+    freep_array[array_index] = p;
+    merge(bp);
+    if (bp->s.size <= 8 << array_index)
       break;
-    }
+    if (++array_index < FREEP_ARR_SIZE)
+      pop(p, bp);
   }
-  // char *edge = sbrk(0);
-  // printf("free:\n");
-  // printf("  Data segment edge - %p\n", edge);
-  // printf("  Blocks:\n");
-  // int flag = 0, flag2 = 0;
-  // for (char *i = 0; i < edge; ++i) {
-  //   for (int j = 0; j < FREEP_ARR_SIZE; ++j) {
-  //     for (p = freep_array[j];; p = p->s.ptr) {
-  //       if (p == 0) {
-  //         break;
-  //       }
-  //       if ((char *)p == i) {
-  //         printf("    %p - occuped\n", p);
-  //         flag2 = 1;
-  //         flag = 1;
-  //         break;
-  //       }
-  //       if (p->s.ptr == freep_array[j]) {
-  //         break;
-  //       }
-  //     }
-  //     if (flag) {
-  //       break;
-  //     }
-  //   }
-  //   if (!flag && !flag2) {
-  //     flag2 = 1;
-  //     printf("    %p - free\n", i);
-  //   }
-  // }
+  printf("free:\n");
+  debug_info();
 }
 
 static Header *
@@ -99,8 +150,13 @@ morecore(uint nu, int idx)
   p = sbrk(nu * sizeof(Header));
   if (p == SBRK_ERROR)
     return 0;
+  if (!is_heap_start_filled) {
+    is_heap_start_filled = 1;
+    heap_start = p;
+  }
   hp = (Header *)p;
   hp->s.size = nu;
+  printf("morecore ");
   free((void *)(hp + 1));
   return freep_array[idx];
 }
@@ -108,94 +164,72 @@ morecore(uint nu, int idx)
 void *
 malloc(uint nbytes)
 {
-  // printf("malloc: malloc %d bytes starts\n", nbytes);
   Header *p, *prevp;
   uint nunits;
 
   nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
-  // printf("malloc: allocating %d units\n", nunits);
   int array_index = 0;
-  for (int i = 8; i < nunits && array_index < FREEP_ARR_SIZE; i *= 2) {
+  for (int i = 8; i < nunits && array_index < FREEP_ARR_SIZE - 1; i *= 2) {
     ++array_index;
   }
-  // printf("malloc: array index is %d\n", array_index);
 
   if ((prevp = freep_array[array_index]) == 0) {
-    // printf("malloc: current array ring is empty\n");
-    base.s.ptr = freep_array[array_index] = prevp = &base;
-    base.s.size = 0;
+    base[array_index].s.ptr = freep_array[array_index] = prevp =
+      &base[array_index];
+    base[array_index].s.size = 0;
   }
   for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
     if (p->s.size >= nunits) {
-      // printf("malloc: adress %p with size %d founded\n", p->s.ptr, p->s.size);
-      if (p->s.size == nunits) {
-        // printf("malloc: sizes equivalent\n");
+      if (p->s.size == nunits)
         prevp->s.ptr = p->s.ptr;
-      } else {
-        // printf("malloc: sizes not equivalent. Getting part of element size\n");
+      else {
         p->s.size -= nunits;
         if (array_index > 0 && p->s.size <= (8 << (array_index - 1))) {
-          // printf(
-          //   "malloc: element is too small to this ring after borrowing part of it. Going to the previous ring\n");
-          Header *p_down = freep_array[array_index - 1];
-          prevp->s.ptr = p->s.ptr;
-          for (Header *p_down = freep_array[array_index - 1];
-               !(p > p_down && p < p_down->s.ptr); p_down = p_down->s.ptr)
-            if (p_down >= p_down->s.ptr && (p > p_down || p < p_down->s.ptr))
+          pop(prevp, p);
+          int down_array_index = 0;
+          for (int i = 8;
+               i < p->s.size && down_array_index < FREEP_ARR_SIZE - 1; i *= 2)
+            ++down_array_index;
+          Header *p_down;
+          while (down_array_index < FREEP_ARR_SIZE) {
+            if (freep_array[down_array_index] == 0) {
+              base[down_array_index].s.ptr = freep_array[down_array_index] =
+                &base[down_array_index];
+              base[down_array_index].s.size = 0;
+            }
+            for (p_down = freep_array[down_array_index];
+                 !(p > p_down && p < p_down->s.ptr); p_down = p_down->s.ptr)
+              if (p_down >= p_down->s.ptr && (p > p_down || p < p_down->s.ptr))
+                break;
+            push(p_down, p);
+            freep_array[down_array_index] = p_down;
+            merge(p);
+            if (p->s.size <= 8 << down_array_index)
               break;
-          p->s.ptr = p_down->s.ptr;
-          // printf("malloc: element successfully downed into previous ring\n");
+            if (++down_array_index < FREEP_ARR_SIZE)
+              pop(p_down, p);
+          }
         }
         p += p->s.size;
         p->s.size = nunits;
       }
       freep_array[array_index] = prevp;
-      // printf("malloc: successfully allocated memory at %p adress\n", p->s.ptr);
-      // char *edge = sbrk(0);
-      // printf("malloc:\n");
-      // printf("  Data segment edge - %p\n", edge);
-      // printf("  Blocks:\n");
-      // int flag = 0, flag2 = 0;
-      // for (char *i = 0; i < edge; ++i) {
-      //   for (int j = 0; j < FREEP_ARR_SIZE; ++j) {
-      //     for (p = freep_array[j];; p = p->s.ptr) {
-      //       if (p == 0) {
-      //         break;
-      //       }
-      //       if ((char *)p == i) {
-      //         printf("    %p - occuped\n", p);
-      //         flag2 = 1;
-      //         flag = 1;
-      //         break;
-      //       }
-      //       if (p->s.ptr == freep_array[j]) {
-      //         break;
-      //       }
-      //     }
-      //     if (flag) {
-      //       break;
-      //     }
-      //   }
-      //   if (!flag && !flag2) {
-      //     flag2 = 1;
-      //     printf("    %p - free\n", i);
-      //   }
-      // }
+      printf("malloc (successfull):\n");
+      debug_info();
       return (void *)(p + 1);
     }
     if (p == freep_array[array_index]) {
       if (array_index < FREEP_ARR_SIZE - 1) {
-        p = freep_array[array_index++];
+        p = freep_array[++array_index];
         if ((prevp = freep_array[array_index]) == 0) {
-          // printf("malloc: current array ring is empty\n");
-          base.s.ptr = freep_array[array_index] = prevp = &base;
-          base.s.size = 0;
+          base[array_index].s.ptr = freep_array[array_index] = prevp =
+            &base[array_index];
+          base[array_index].s.size = 0;
+          p = prevp;
         }
-        // printf(
-        //   "malloc: in this ring not founded correct size element. Going to the next ring %d\n",
-        //   array_index);
       } else if ((p = morecore(nunits, array_index)) == 0) {
-        // printf("malloc: new memory allocated incorrect\n");
+        printf("malloc (failed):\n");
+        debug_info();
         return 0;
       }
     }
