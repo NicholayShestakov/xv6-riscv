@@ -137,20 +137,21 @@ print_list(List *list)
 void
 main()
 {
+  printf("Creating list\n");
   List *new_list_1 = create_new_list();
-  add_new_element(new_list_1, 1);
-  add_new_element(new_list_1, 2);
-  add_new_element(new_list_1, 3);
-  add_new_element(new_list_1, 4);
-  add_new_element(new_list_1, 5);
-  add_new_element(new_list_1, 6);
-  add_new_element(new_list_1, 7);
-  add_new_element(new_list_1, 8);
-  add_new_element(new_list_1, 9);
-  add_new_element(new_list_1, 10);
+
+  for (int i = 0; i < 10; ++i) {
+    printf("Adding %d\n", i);
+    add_new_element(new_list_1, i);
+  }
+
+  printf("Deleting 4\n");
   delete_element_on_index(new_list_1, 4);
+  printf("Deleting 1\n");
   delete_element_on_index(new_list_1, 1);
+  printf("Deleting 7\n");
   delete_element_on_index(new_list_1, 7);
+  printf("Deleting list\n");
   delete_new_list(new_list_1);
   new_list_1 = 0;
 }
