@@ -18,6 +18,9 @@ extern char etext[]; // kernel.ld sets this to end of kernel code.
 extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
+
+// функция реализации адресного пространства ядра
+
 pagetable_t
 kvmmake(void)
 {
@@ -48,6 +51,8 @@ kvmmake(void)
 
   // allocate and map a kernel stack for each process.
   proc_mapstacks(kpgtbl);
+
+  kvmmap(kpgtbl, RTC, RTC, PGSIZE, PTE_R | PTE_W);
 
   return kpgtbl;
 }

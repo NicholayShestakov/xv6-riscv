@@ -37,4 +37,5 @@ struct devsw {
 
 extern struct devsw devsw[];
 
-#define CONSOLE 1
+#define CONSOLE   1
+#define RTC_MAJOR 3
