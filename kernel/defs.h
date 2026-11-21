@@ -23,6 +23,9 @@ void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
 
+// nzns.c
+void            nznsinit(void);
+
 // exec.c
 int             kexec(char*, char**);
 
