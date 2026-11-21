@@ -23,6 +23,10 @@ main(void)
   dup(0); // stdout
   dup(0); // stderr
 
+  mknod("null", NZNS, NZNS_NULL);
+  mknod("zero", NZNS, NZNS_ZERO);
+  mknod("nullstat", NZNS, NZNS_NULLSTAT);
+
   for (;;) {
     printf("init: starting sh\n");
     pid = fork();
