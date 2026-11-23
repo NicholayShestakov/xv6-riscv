@@ -46,9 +46,9 @@ convert_to_beautiful_datetime_format(uint64 *nanoseconds)
   printf("%lu.%lu", month, years);
 
   if ((hours % 24) < 10) {
-    printf("0");
+    printf(" 0");
   }
-  printf(" %lu:", hours % 24);
+  printf("%lu:", hours % 24);
 
   if ((minutes % 60) < 10) {
     printf("0");
