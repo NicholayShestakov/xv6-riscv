@@ -42,6 +42,8 @@ extern struct devsw devsw[];
 #define NZNS    2
 #define RTC     3
 
+#define RTC_MAJOR 3
+
 // NZNS minors
 #define NZNS_NULL     0
 #define NZNS_ZERO     1
