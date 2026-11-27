@@ -38,10 +38,8 @@ struct devsw {
 
 extern struct devsw devsw[];
 
-#define CONSOLE 1
-#define NZNS    2
-#define RTC     3
-
+#define CONSOLE   1
+#define NZNS      2
 #define RTC_MAJOR 3
 
 // NZNS minors

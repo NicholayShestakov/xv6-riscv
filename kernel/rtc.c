@@ -19,7 +19,7 @@
 struct spinlock lock;
 
 int
-read_registers(int user_dst, uint64 dst, int n)
+read_registers(int user_dst, uint64 dst, int n, short minor)
 {
   if (sizeof(uint64) != n) {
     return -1;
@@ -38,7 +38,7 @@ read_registers(int user_dst, uint64 dst, int n)
 }
 
 int
-write_registers(int user_dst, uint64 dst, int n)
+write_registers(int user_dst, uint64 dst, int n, short minor)
 {
   return -1;
 }
