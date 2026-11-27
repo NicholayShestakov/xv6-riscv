@@ -54,8 +54,8 @@ nznsread(int user_dst, uint64 dst, int n, short minor)
         release(&nznslock);
         return sizeof(uint64);
       }
+      release(&nznslock);
     }
-    release(&nznslock);
   default:
     return -1;
   }
